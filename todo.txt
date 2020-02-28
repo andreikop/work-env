@@ -1,0 +1,3 @@
+Own shell history
+Possibility to run GUI applications
+Title for console tabs
