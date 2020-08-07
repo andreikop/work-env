@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/user"
 	"os/exec"
+	"os/user"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
 	// for docker attach "github.com/moby/moby/pkg/stdcopy"
 )
@@ -17,7 +18,7 @@ func createWorkEnv(client *client.Client, image, name string) (containerId strin
 	workDir, _ := os.Getwd()
 
 	user, err := user.Current()
-	userName := "";
+	userName := ""
 	if err == nil {
 		userName = user.Username
 		fmt.Printf("Got user: %v", userName)
@@ -26,30 +27,35 @@ func createWorkEnv(client *client.Client, image, name string) (containerId strin
 	}
 
 	var containerConf = container.Config{
-		Hostname: name,
-		User: userName,
-		AttachStdin: true,
+		Hostname:     name,
+		User:         userName,
+		AttachStdin:  true,
 		AttachStdout: true,
 		AttachStderr: true,
-		Tty: true,
-		OpenStdin: true,
-		Env: nil, // TODO
-		Cmd: nil, // TODO             strslice.StrSlice   // Command to run when starting the container
-		Image: image,
-		Volumes: map[string]struct{} {
-			"/home:/home": {},
-			"/dev:/dev": {},
-			"/sys:/sys": {},
-			"/tmp:/tmp": {}},
-		WorkingDir: workDir,
-		Entrypoint: nil, //      strslice.StrSlice   // Entrypoint to run when starting the container
-		Labels: map[string]string{"app": "work-env"},
+		Tty:          true,
+		OpenStdin:    true,
+		Env:          nil, // TODO
+		Cmd:          nil, // TODO             strslice.StrSlice   // Command to run when starting the container
+		Image:        image,
+		Volumes:      nil,
+		WorkingDir:   workDir,
+		Entrypoint:   nil, //      strslice.StrSlice   // Entrypoint to run when starting the container
+		Labels:       map[string]string{"app": "work-env"},
+	}
+
+	var hostConf = container.HostConfig{
+		Mounts: []mount.Mount {
+			{Type: "bind", Source: "/home", Target: "/home"},
+			{Type: "bind", Source: "/dev", Target: "/dev"},
+			{Type: "bind", Source: "/sys", Target: "/sys"},
+			{Type: "bind", Source: "/tmp", Target: "/tmp"},
+		},
 	}
 
 	resp, err := client.ContainerCreate(
 		context.Background(),
 		&containerConf,
-		nil, // HostConfig
+		&hostConf,
 		nil, // networkingConfig
 		name)
 	if err != nil {
@@ -57,36 +63,36 @@ func createWorkEnv(client *client.Client, image, name string) (containerId strin
 	}
 
 	err = client.ContainerStart(context.Background(), resp.ID, types.ContainerStartOptions{})
-    if err != nil {
+	if err != nil {
 		return "", fmt.Errorf("Failed to start container: %v", err)
-    }
+	}
 
-    return resp.ID, nil
+	return resp.ID, nil
 }
 
 func attachToContainer(client *client.Client, containerName string) error {
 	// TODO convert name to id
-/*
-	hijackedCon, err := client.ContainerAttach(
-		context.Background(),
-		resp.ID,
-		types.ContainerAttachOptions{
-			Stdin: true,
-			Stdout: true,
-			Stderr: true,
-		})
-	if err != nil {
-		return fmt.Errorf("Failed to attach to a container: %v", err)
-	}
+	/*
+		hijackedCon, err := client.ContainerAttach(
+			context.Background(),
+			resp.ID,
+			types.ContainerAttachOptions{
+				Stdin: true,
+				Stdout: true,
+				Stderr: true,
+			})
+		if err != nil {
+			return fmt.Errorf("Failed to attach to a container: %v", err)
+		}
 
-	defer hijackedCon.Close()
+		defer hijackedCon.Close()
 
-	written, err := stdcopy.StdCopy(os.Stdout, os.Stderr, hijackedCon.Reader)
-	if err != nil {
-		return fmt.Errorf("Failed to copy IO streams: %v", err)
-	}
-	fmt.Printf("~~~~ read done %d", written)
-*/
+		written, err := stdcopy.StdCopy(os.Stdout, os.Stderr, hijackedCon.Reader)
+		if err != nil {
+			return fmt.Errorf("Failed to copy IO streams: %v", err)
+		}
+		fmt.Printf("~~~~ read done %d", written)
+	*/
 	// TODO use docker API instead of docker command
 
 	// TODO do not hardcode the shell
@@ -103,7 +109,6 @@ func attachToContainer(client *client.Client, containerName string) error {
 
 	return nil
 }
-
 
 func removeContainer(client *client.Client, containerName string) error {
 	return client.ContainerRemove(
@@ -124,7 +129,7 @@ func main() {
 
 	switch command {
 	case "create":
-		image := os.Args[3]  // TODO args parser
+		image := os.Args[3] // TODO args parser
 		containerId, err := createWorkEnv(client, image, containerName)
 		if err != nil {
 			fmt.Printf("Failed to create work envinronment: %v\n", err)
