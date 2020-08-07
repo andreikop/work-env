@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y \
 
 RUN locale-gen en_US.UTF-8
 
-RUN useradd ak --shell /bin/zsh --password ''
+RUN useradd ak --shell /bin/zsh --password 'ak'
 RUN usermod -G sudo ak
 RUN mkdir /home/ak
 RUN chown ak:ak /home/ak
