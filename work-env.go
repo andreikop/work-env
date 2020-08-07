@@ -18,8 +18,11 @@ func createWorkEnv(client *client.Client, image, name string) (containerId strin
 
 	user, err := user.Current()
 	userName := "";
-	if err != nil {
+	if err == nil {
 		userName = user.Username
+		fmt.Printf("Got user: %v", userName)
+	} else {
+		fmt.Printf("Failed to get current user: %v", err)
 	}
 
 	var containerConf = container.Config{
