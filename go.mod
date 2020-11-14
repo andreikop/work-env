@@ -3,6 +3,7 @@ module github.com/andreikop/work-env
 go 1.14
 
 require (
+	github.com/alecthomas/kong v0.2.11
 	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/docker/docker v1.13.1
 	github.com/docker/go-connections v0.4.0 // indirect

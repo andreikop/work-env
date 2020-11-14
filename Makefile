@@ -19,3 +19,10 @@ attach:
 
 rm-container:
 	docker rm $(CONTAINER_NAME)
+
+
+recreate:
+	docker build . --tag docker-env
+	./work-env rm ebuild
+	./work-env create ebuild docker-env
+	./work-env attach ebuild

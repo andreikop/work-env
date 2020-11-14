@@ -12,6 +12,8 @@ import (
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
 	// for docker attach "github.com/moby/moby/pkg/stdcopy"
+
+	"github.com/alecthomas/kong"
 )
 
 func createWorkEnv(client *client.Client, image, name string) (containerId string, err error) {
@@ -21,7 +23,6 @@ func createWorkEnv(client *client.Client, image, name string) (containerId strin
 	userName := ""
 	if err == nil {
 		userName = user.Username
-		fmt.Printf("Got user: %v", userName)
 	} else {
 		fmt.Printf("Failed to get current user: %v", err)
 	}
@@ -44,11 +45,12 @@ func createWorkEnv(client *client.Client, image, name string) (containerId strin
 	}
 
 	var hostConf = container.HostConfig{
-		Mounts: []mount.Mount {
+		Mounts: []mount.Mount{
 			{Type: "bind", Source: "/home", Target: "/home"},
 			{Type: "bind", Source: "/dev", Target: "/dev"},
 			{Type: "bind", Source: "/sys", Target: "/sys"},
 			{Type: "bind", Source: "/tmp", Target: "/tmp"},
+			{Type: "bind", Source: "/etc/resolv.conf", Target: "/etc/resolf.conf"},
 		},
 	}
 
@@ -118,32 +120,46 @@ func removeContainer(client *client.Client, containerName string) error {
 }
 
 func main() {
-	// TODO more sophisticated parser
-	var command string = os.Args[1]
-	var containerName string = os.Args[2]
+	var CLI struct {
+		Create struct {
+			Image string `arg help:"Name of an docker image used to create envinronment"`
+			Name  string `arg name:"env-name" help:"Name of the new envinronment"`
+		} `cmd help:"Create new envinronment instance <env-name> from docker image <image>"`
+
+		Enter struct {
+			Name string `arg name:"env-name" help:"Envinronment name to enter (Docker container to attach)"`
+		} `cmd help:"Start working in envinronment. Start a container and attach to it."`
+
+		Remove struct {
+			Name string `arg name:"env-name" help:"Envinronment to remove"`
+		} `cmd help:"Remove an envinronment instance"`
+	}
 
 	client, err := client.NewEnvClient()
 	if err != nil {
 		panic(err)
 	}
 
-	switch command {
-	case "create":
-		image := os.Args[3] // TODO args parser
-		containerId, err := createWorkEnv(client, image, containerName)
+	ctx := kong.Parse(&CLI)
+
+	switch ctx.Command() {
+	case "create <image> <env-name>":
+		containerId, err := createWorkEnv(client, CLI.Create.Image, CLI.Create.Name)
 		if err != nil {
 			fmt.Printf("Failed to create work envinronment: %v\n", err)
+		} else {
+			fmt.Printf("Created container %s\n", containerId)
 		}
-		fmt.Printf("Created container %s\n", containerId)
-	case "attach":
-		err := attachToContainer(client, containerName)
+	case "enter <env-name>":
+		err := attachToContainer(client, CLI.Enter.Name)
 		if err != nil {
-			fmt.Printf("Failed to attach to envinronment: %v\n", err)
+			fmt.Printf("Failed to enter to envinronment: %v\n", err)
 		}
-	case "remove", "rm":
-		err := removeContainer(client, containerName)
+	case "remove <env-name>":
+		err := removeContainer(client, CLI.Remove.Name)
 		if err != nil {
 			fmt.Printf("Failed to remove container: %v\n", err)
 		}
 	}
+
 }
