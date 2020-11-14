@@ -145,7 +145,7 @@ func main() {
 		Create struct {
 			Image string `arg help:"Name of a Docker image used to create envinronment"`
 			Name  string `arg name:"env-name" help:"Name of the new envinronment"`
-		} `cmd help:"Create new envinronment instance <env-name> from docker image <image>"`
+		} `cmd help:"Create new envinronment instance <env-name> from docker image <image> and attch to it. Overwrites existing containers."`
 
 		Enter struct {
 			Name string `arg name:"env-name" help:"Envinronment name to enter (Docker container to attach)"`
@@ -170,11 +170,14 @@ func main() {
 			fmt.Printf("Failed to build an envinronment image: %v\n", err)
 		}
 	case "create <image> <env-name>":
-		containerId, err := createWorkEnv(client, CLI.Create.Image, CLI.Create.Name)
+		_, err := createWorkEnv(client, CLI.Create.Image, CLI.Create.Name)
 		if err != nil {
 			fmt.Printf("Failed to create work envinronment: %v\n", err)
-		} else {
-			fmt.Printf("Created container %s\n", containerId)
+			return
+		}
+		err = attachToContainer(client, CLI.Create.Name)
+		if err != nil {
+			fmt.Printf("Failed to enter to envinronment: %v\n", err)
 		}
 	case "enter <env-name>":
 		err := attachToContainer(client, CLI.Enter.Name)
