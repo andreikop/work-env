@@ -16,6 +16,21 @@ import (
 	"github.com/alecthomas/kong"
 )
 
+func buildEnvinronment(client *client.Client, path, image string) error {
+		command := exec.Command("/usr/bin/docker", "build", path, "-t", image)
+
+		command.Stdin = os.Stdin
+		command.Stdout = os.Stdout
+		command.Stderr = os.Stderr
+
+		err := command.Run()
+		if err != nil {
+			return fmt.Errorf("Failed to execute 'docker exec': %v", err)
+		}
+
+		return nil
+}
+
 func createWorkEnv(client *client.Client, image, name string) (containerId string, err error) {
 	workDir, _ := os.Getwd()
 
@@ -121,8 +136,14 @@ func removeContainer(client *client.Client, containerName string) error {
 
 func main() {
 	var CLI struct {
+		Build struct {
+			Path string `arg help:"Docker image build path"`
+			Image string `arg help:"Name of the envinronment image"`
+			// DockerFile string `arg help:"DockerFile used to create envinronment" default:"DockerFile"`
+		} `cmd help:"Build an envinronment image <image> from a DockerFile in a current directory"`
+
 		Create struct {
-			Image string `arg help:"Name of an docker image used to create envinronment"`
+			Image string `arg help:"Name of a Docker image used to create envinronment"`
 			Name  string `arg name:"env-name" help:"Name of the new envinronment"`
 		} `cmd help:"Create new envinronment instance <env-name> from docker image <image>"`
 
@@ -143,6 +164,11 @@ func main() {
 	ctx := kong.Parse(&CLI)
 
 	switch ctx.Command() {
+	case "build <path> <image>":
+		err := buildEnvinronment(client, CLI.Build.Path, CLI.Build.Image)
+		if err != nil {
+			fmt.Printf("Failed to build an envinronment image: %v\n", err)
+		}
 	case "create <image> <env-name>":
 		containerId, err := createWorkEnv(client, CLI.Create.Image, CLI.Create.Name)
 		if err != nil {
@@ -160,6 +186,8 @@ func main() {
 		if err != nil {
 			fmt.Printf("Failed to remove container: %v\n", err)
 		}
+	default:
+		panic(ctx.Command())
 	}
 
 }
