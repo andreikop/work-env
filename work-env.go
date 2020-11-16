@@ -119,10 +119,11 @@ func attachToContainer(client *client.Client, containerName string) error {
 	command.Stdout = os.Stdout
 	command.Stderr = os.Stderr
 
-	err := command.Run()
+	err := command.Start()
 	if err != nil {
-		return fmt.Errorf("Failed to execute 'docker exec': %v", err)
+		return fmt.Errorf("Failed to start 'docker exec': %v", err)
 	}
+	defer command.Wait()
 
 	return nil
 }
@@ -145,10 +146,12 @@ func main() {
 		Create struct {
 			Image string `arg help:"Name of a Docker image used to create envinronment"`
 			Name  string `arg name:"env-name" help:"Name of the new envinronment"`
+			Rm  bool `help:"Remove envinronment after session finished"`
 		} `cmd help:"Create new envinronment instance <env-name> from docker image <image> and attch to it. Overwrites existing containers."`
 
 		Enter struct {
 			Name string `arg name:"env-name" help:"Envinronment name to enter (Docker container to attach)"`
+			Rm  bool `help:"Remove envinronment after session finished"`
 		} `cmd help:"Start working in envinronment. Start a container and attach to it."`
 
 		Remove struct {
@@ -178,6 +181,13 @@ func main() {
 		err = attachToContainer(client, CLI.Create.Name)
 		if err != nil {
 			fmt.Printf("Failed to enter to envinronment: %v\n", err)
+			return
+		}
+		if (CLI.Create.Rm) {
+			err = removeContainer(client, CLI.Create.Name)
+			if err != nil {
+				fmt.Printf("Failed to remove container: %v\n", err)
+			}
 		}
 	case "enter <env-name>":
 		err := attachToContainer(client, CLI.Enter.Name)
