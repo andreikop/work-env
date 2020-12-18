@@ -141,16 +141,16 @@ func main() {
 			Path string `arg help:"Docker image build path"`
 			Image string `arg help:"Name of the envinronment image"`
 			// DockerFile string `arg help:"DockerFile used to create envinronment" default:"DockerFile"`
-		} `cmd help:"Build an envinronment image <image> from a DockerFile in a current directory"`
+		} `cmd help:"Build new envinronment image <image-name> from a DockerFile in a current directory"`
 
 		Create struct {
 			Image string `arg help:"Name of a Docker image used to create envinronment"`
 			Name  string `arg name:"env-name" help:"Name of the new envinronment"`
 			Rm  bool `help:"Remove envinronment after session finished"`
-		} `cmd help:"Create new envinronment instance <env-name> from docker image <image> and attch to it. Overwrites existing containers."`
+		} `cmd help:"Create new envinronment instance <env-name> from docker image <image> and attach to it. Overwrites existing containers."`
 
-		Enter struct {
-			Name string `arg name:"env-name" help:"Envinronment name to enter (Docker container to attach)"`
+		Attach struct {
+			Name string `arg name:"env-name" help:"Envinronment name (docker container) to attach"`
 			Rm  bool `help:"Remove envinronment after session finished"`
 		} `cmd help:"Start working in envinronment. Start a container and attach to it."`
 
@@ -190,9 +190,9 @@ func main() {
 			}
 		}
 	case "enter <env-name>":
-		err := attachToContainer(client, CLI.Enter.Name)
+		err := attachToContainer(client, CLI.Attach.Name)
 		if err != nil {
-			fmt.Printf("Failed to enter to envinronment: %v\n", err)
+			fmt.Printf("Failed to attach to envinronment: %v\n", err)
 		}
 	case "remove <env-name>":
 		err := removeContainer(client, CLI.Remove.Name)
