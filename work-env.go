@@ -10,6 +10,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	// for docker attach "github.com/moby/moby/pkg/stdcopy"
 
@@ -135,6 +136,24 @@ func removeContainer(client *client.Client, containerName string) error {
 		types.ContainerRemoveOptions{Force: true})
 }
 
+func listImages(client *client.Client) error {
+	var filter filters.Args = filters.NewArgs();
+	filter.Add("label", "app=work-env");
+
+	imgSummaries, err := client.ImageList(
+		context.Background(),
+		types.ImageListOptions{Filters: filter});
+	if err != nil {
+		return fmt.Errorf("Failed to list envinronments: %v", err)
+	}
+
+	for _, imgSummary := range imgSummaries {
+		fmt.Printf("%s\n", imgSummary.ID);
+	}
+
+	return nil;
+}
+
 func main() {
 	var CLI struct {
 		Build struct {
@@ -157,6 +176,8 @@ func main() {
 		Remove struct {
 			Name string `arg name:"env-name" help:"Envinronment to remove"`
 		} `cmd help:"Remove an envinronment instance"`
+		Images struct {
+		} `cmd help:"List envinronment images"`
 	}
 
 	client, err := client.NewEnvClient()
@@ -198,6 +219,11 @@ func main() {
 		err := removeContainer(client, CLI.Remove.Name)
 		if err != nil {
 			fmt.Printf("Failed to remove container: %v\n", err)
+		}
+	case "images":
+		err := listImages(client)
+		if err != nil {
+			fmt.Printf("Failed to list images: %v\n", err)
 		}
 	default:
 		panic(ctx.Command())
