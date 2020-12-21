@@ -18,7 +18,7 @@ import (
 )
 
 func buildEnvinronment(client *client.Client, path, image string) error {
-	command := exec.Command("/usr/bin/docker", "build", path, "-t", image)
+	command := exec.Command("/usr/bin/docker", "build", path, "--tag", image, "--label", "app=work-env")
 
 	command.Stdin = os.Stdin
 	command.Stdout = os.Stdout
