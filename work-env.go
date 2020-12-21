@@ -9,8 +9,8 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
 	// for docker attach "github.com/moby/moby/pkg/stdcopy"
 
@@ -18,18 +18,18 @@ import (
 )
 
 func buildEnvinronment(client *client.Client, path, image string) error {
-		command := exec.Command("/usr/bin/docker", "build", path, "-t", image)
+	command := exec.Command("/usr/bin/docker", "build", path, "-t", image)
 
-		command.Stdin = os.Stdin
-		command.Stdout = os.Stdout
-		command.Stderr = os.Stderr
+	command.Stdin = os.Stdin
+	command.Stdout = os.Stdout
+	command.Stderr = os.Stderr
 
-		err := command.Run()
-		if err != nil {
-			return fmt.Errorf("Failed to execute 'docker exec': %v", err)
-		}
+	err := command.Run()
+	if err != nil {
+		return fmt.Errorf("Failed to execute 'docker exec': %v", err)
+	}
 
-		return nil
+	return nil
 }
 
 func createWorkEnv(client *client.Client, image, name string) (containerId string, err error) {
@@ -137,27 +137,27 @@ func removeContainer(client *client.Client, containerName string) error {
 }
 
 func listImages(client *client.Client) error {
-	var filter filters.Args = filters.NewArgs();
-	filter.Add("label", "app=work-env");
+	var filter filters.Args = filters.NewArgs()
+	filter.Add("label", "app=work-env")
 
 	imgSummaries, err := client.ImageList(
 		context.Background(),
-		types.ImageListOptions{Filters: filter});
+		types.ImageListOptions{Filters: filter})
 	if err != nil {
 		return fmt.Errorf("Failed to list envinronments: %v", err)
 	}
 
 	for _, imgSummary := range imgSummaries {
-		fmt.Printf("%s\n", imgSummary.ID);
+		fmt.Printf("%s\n", imgSummary.ID)
 	}
 
-	return nil;
+	return nil
 }
 
 func main() {
 	var CLI struct {
 		Build struct {
-			Path string `arg help:"Docker image build path"`
+			Path  string `arg help:"Docker image build path"`
 			Image string `arg help:"Name of the envinronment image"`
 			// DockerFile string `arg help:"DockerFile used to create envinronment" default:"DockerFile"`
 		} `cmd help:"Build new envinronment image <image-name> from a DockerFile in a current directory"`
@@ -165,12 +165,12 @@ func main() {
 		Create struct {
 			Image string `arg help:"Name of a Docker image used to create envinronment"`
 			Name  string `arg name:"env-name" help:"Name of the new envinronment"`
-			Rm  bool `help:"Remove envinronment after session finished"`
+			Rm    bool   `help:"Remove envinronment after session finished"`
 		} `cmd help:"Create new envinronment instance <env-name> from docker image <image> and attach to it. Overwrites existing containers."`
 
 		Attach struct {
 			Name string `arg name:"env-name" help:"Envinronment name (docker container) to attach"`
-			Rm  bool `help:"Remove envinronment after session finished"`
+			Rm   bool   `help:"Remove envinronment after session finished"`
 		} `cmd help:"Start working in envinronment. Start a container and attach to it."`
 
 		Remove struct {
@@ -204,7 +204,7 @@ func main() {
 			fmt.Printf("Failed to enter to envinronment: %v\n", err)
 			return
 		}
-		if (CLI.Create.Rm) {
+		if CLI.Create.Rm {
 			err = removeContainer(client, CLI.Create.Name)
 			if err != nil {
 				fmt.Printf("Failed to remove container: %v\n", err)
