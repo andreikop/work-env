@@ -148,7 +148,14 @@ func listImages(client *client.Client) error {
 	}
 
 	for _, imgSummary := range imgSummaries {
-		fmt.Printf("%s\n", imgSummary.ID)
+		if len(imgSummary.RepoTags) > 0 {
+			for _, repoTag := range imgSummary.RepoTags {
+				fmt.Printf("%s\n", repoTag)
+			}
+		} else {  // Strange, no tag. Let's show at least ID
+			fmt.Printf("%s\n", imgSummary.ID)
+		}
+
 	}
 
 	return nil
