@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"os/user"
+	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -152,11 +153,53 @@ func listImages(client *client.Client) error {
 			for _, repoTag := range imgSummary.RepoTags {
 				fmt.Printf("%s\n", repoTag)
 			}
-		} else {  // Strange, no tag. Let's show at least ID
+		} else { // Strange, no tag. Let's show at least ID
 			fmt.Printf("%s\n", imgSummary.ID)
 		}
 
 	}
+
+	return nil
+}
+
+func printRunningContainers(containers []types.Container) {
+	maxNameLen := 19
+	for _, container := range containers {
+		for _, name := range container.Names {
+			if len(name) > maxNameLen {
+				maxNameLen = len(name)
+			}
+		}
+	}
+	format := fmt.Sprintf("%%-%ds %%s\n", maxNameLen)
+
+	fmt.Printf(format, "Envinronment", "Image")
+	for _, container := range containers {
+		var name string
+		if len(container.Names) > 0 {
+			name = strings.Join(container.Names, ",")
+		} else {
+			name = container.ID
+		}
+
+		fmt.Printf(format, name, container.Image)
+	}
+}
+
+func listContainers(client *client.Client) error {
+	var filter filters.Args = filters.NewArgs()
+	// filter.Add("label", "app=work-env")
+
+	containers, err := client.ContainerList(
+		context.Background(),
+		types.ContainerListOptions{
+			All:     true,
+			Filters: filter})
+	if err != nil {
+		return fmt.Errorf("Failed to list containers: %v", err)
+	}
+
+	printRunningContainers(containers)
 
 	return nil
 }
@@ -185,6 +228,8 @@ func main() {
 		} `cmd help:"Remove an envinronment instance"`
 		Images struct {
 		} `cmd help:"List envinronment images"`
+		Ps struct {
+		} `cmd help:"List running envinronment images"`
 	}
 
 	client, err := client.NewEnvClient()
@@ -231,6 +276,12 @@ func main() {
 		err := listImages(client)
 		if err != nil {
 			fmt.Printf("Failed to list images: %v\n", err)
+		}
+
+	case "ps":
+		err := listContainers(client)
+		if err != nil {
+			fmt.Printf("Failed to list envinronment instances: %v\n", err)
 		}
 	default:
 		panic(ctx.Command())
