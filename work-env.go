@@ -183,7 +183,7 @@ func main() {
 			Rm   bool   `help:"Remove environment after session finished"`
 		} `cmd help:"Start working in environment. Start a container and attach to it."`
 
-		Remove struct {
+		Rm struct {
 			Name string `arg name:"env-name" help:"Environment to remove"`
 		} `cmd help:"Remove an environment instance"`
 		Images struct {
@@ -227,8 +227,8 @@ func main() {
 		if err != nil {
 			fmt.Printf("Failed to attach to environment: %v\n", err)
 		}
-	case "remove <env-name>":
-		err := removeContainer(client, CLI.Remove.Name)
+	case "rm <env-name>":
+		err := removeContainer(client, CLI.Rm.Name)
 		if err != nil {
 			fmt.Printf("Failed to remove container: %v\n", err)
 		}
