@@ -181,11 +181,11 @@ func main() {
 		} `cmd help:"Build new environment image <image-name> from a DockerFile in a current directory"`
 		Images struct {
 		} `cmd help:"List environment images"`
-		Create struct {
-			Image string `arg help:"Name of a Docker image used to create environment"`
+		Run struct {
+			Image string `arg help:"Name of a Docker image used to create an environment"`
 			Name  string `arg name:"env-name" help:"Name of the new environment"`
-			Rm    bool   `help:"Remove environment after session finished"`
-		} `cmd help:"Create new environment instance <env-name> from docker image <image> and attach to it. Overwrites existing containers."`
+			Rm    bool   `help:"Remove an environment after a session finished"`
+		} `cmd help:"Create a new environment instance <env-name> from docker image <image> and attach to it. Overwrites existing containers."`
 		Ps struct {
 		} `cmd help:"List running environment images"`
 		Attach struct {
@@ -210,19 +210,19 @@ func main() {
 		if err != nil {
 			fmt.Printf("Failed to build an environment image: %v\n", err)
 		}
-	case "create <image> <env-name>":
-		_, err := createWorkEnv(client, CLI.Create.Image, CLI.Create.Name)
+	case "run <image> <env-name>":
+		_, err := createWorkEnv(client, CLI.Run.Image, CLI.Run.Name)
 		if err != nil {
 			fmt.Printf("Failed to create work environment: %v\n", err)
 			return
 		}
-		err = attachToContainer(client, CLI.Create.Name)
+		err = attachToContainer(client, CLI.Run.Name)
 		if err != nil {
 			fmt.Printf("Failed to enter to environment: %v\n", err)
 			return
 		}
-		if CLI.Create.Rm {
-			err = removeContainer(client, CLI.Create.Name)
+		if CLI.Run.Rm {
+			err = removeContainer(client, CLI.Run.Name)
 			if err != nil {
 				fmt.Printf("Failed to remove container: %v\n", err)
 			}
