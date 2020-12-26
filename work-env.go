@@ -18,7 +18,7 @@ import (
 	"github.com/alecthomas/kong"
 )
 
-func buildEnvinronment(client *client.Client, path, image string) error {
+func buildEnvironment(client *client.Client, path, image string) error {
 	command := exec.Command("/usr/bin/docker", "build", path, "--tag", image, "--label", "app=work-env")
 
 	command.Stdin = os.Stdin
@@ -145,7 +145,7 @@ func listImages(client *client.Client) error {
 		context.Background(),
 		types.ImageListOptions{Filters: filter})
 	if err != nil {
-		return fmt.Errorf("Failed to list envinronments: %v", err)
+		return fmt.Errorf("Failed to list environments: %v", err)
 	}
 
 	for _, imgSummary := range imgSummaries {
@@ -173,7 +173,7 @@ func printRunningContainers(containers []types.Container) {
 	}
 	format := fmt.Sprintf("%%-%ds %%s\n", maxNameLen)
 
-	fmt.Printf(format, "Envinronment", "Image")
+	fmt.Printf(format, "Environment", "Image")
 	for _, container := range containers {
 		var name string
 		if len(container.Names) > 0 {
@@ -208,28 +208,28 @@ func main() {
 	var CLI struct {
 		Build struct {
 			Path  string `arg help:"Docker image build path"`
-			Image string `arg help:"Name of the envinronment image"`
-			// DockerFile string `arg help:"DockerFile used to create envinronment" default:"DockerFile"`
-		} `cmd help:"Build new envinronment image <image-name> from a DockerFile in a current directory"`
+			Image string `arg help:"Name of the environment image"`
+			// DockerFile string `arg help:"DockerFile used to create environment" default:"DockerFile"`
+		} `cmd help:"Build new environment image <image-name> from a DockerFile in a current directory"`
 
 		Create struct {
-			Image string `arg help:"Name of a Docker image used to create envinronment"`
-			Name  string `arg name:"env-name" help:"Name of the new envinronment"`
-			Rm    bool   `help:"Remove envinronment after session finished"`
-		} `cmd help:"Create new envinronment instance <env-name> from docker image <image> and attach to it. Overwrites existing containers."`
+			Image string `arg help:"Name of a Docker image used to create environment"`
+			Name  string `arg name:"env-name" help:"Name of the new environment"`
+			Rm    bool   `help:"Remove environment after session finished"`
+		} `cmd help:"Create new environment instance <env-name> from docker image <image> and attach to it. Overwrites existing containers."`
 
 		Attach struct {
-			Name string `arg name:"env-name" help:"Envinronment name (docker container) to attach"`
-			Rm   bool   `help:"Remove envinronment after session finished"`
-		} `cmd help:"Start working in envinronment. Start a container and attach to it."`
+			Name string `arg name:"env-name" help:"Environment name (docker container) to attach"`
+			Rm   bool   `help:"Remove environment after session finished"`
+		} `cmd help:"Start working in environment. Start a container and attach to it."`
 
 		Remove struct {
-			Name string `arg name:"env-name" help:"Envinronment to remove"`
-		} `cmd help:"Remove an envinronment instance"`
+			Name string `arg name:"env-name" help:"Environment to remove"`
+		} `cmd help:"Remove an environment instance"`
 		Images struct {
-		} `cmd help:"List envinronment images"`
+		} `cmd help:"List environment images"`
 		Ps struct {
-		} `cmd help:"List running envinronment images"`
+		} `cmd help:"List running environment images"`
 	}
 
 	client, err := client.NewEnvClient()
@@ -241,19 +241,19 @@ func main() {
 
 	switch ctx.Command() {
 	case "build <path> <image>":
-		err := buildEnvinronment(client, CLI.Build.Path, CLI.Build.Image)
+		err := buildEnvironment(client, CLI.Build.Path, CLI.Build.Image)
 		if err != nil {
-			fmt.Printf("Failed to build an envinronment image: %v\n", err)
+			fmt.Printf("Failed to build an environment image: %v\n", err)
 		}
 	case "create <image> <env-name>":
 		_, err := createWorkEnv(client, CLI.Create.Image, CLI.Create.Name)
 		if err != nil {
-			fmt.Printf("Failed to create work envinronment: %v\n", err)
+			fmt.Printf("Failed to create work environment: %v\n", err)
 			return
 		}
 		err = attachToContainer(client, CLI.Create.Name)
 		if err != nil {
-			fmt.Printf("Failed to enter to envinronment: %v\n", err)
+			fmt.Printf("Failed to enter to environment: %v\n", err)
 			return
 		}
 		if CLI.Create.Rm {
@@ -265,7 +265,7 @@ func main() {
 	case "enter <env-name>":
 		err := attachToContainer(client, CLI.Attach.Name)
 		if err != nil {
-			fmt.Printf("Failed to attach to envinronment: %v\n", err)
+			fmt.Printf("Failed to attach to environment: %v\n", err)
 		}
 	case "remove <env-name>":
 		err := removeContainer(client, CLI.Remove.Name)
@@ -281,7 +281,7 @@ func main() {
 	case "ps":
 		err := listContainers(client)
 		if err != nil {
-			fmt.Printf("Failed to list envinronment instances: %v\n", err)
+			fmt.Printf("Failed to list environment instances: %v\n", err)
 		}
 	default:
 		panic(ctx.Command())
