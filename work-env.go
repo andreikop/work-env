@@ -31,31 +31,6 @@ func buildEnvironment(client *client.Client, path, image string) error {
 }
 
 func attachToContainer(client *client.Client, containerName string) error {
-	// TODO convert name to id
-	/*
-		hijackedCon, err := client.ContainerAttach(
-			context.Background(),
-			resp.ID,
-			types.ContainerAttachOptions{
-				Stdin: true,
-				Stdout: true,
-				Stderr: true,
-			})
-		if err != nil {
-			return fmt.Errorf("Failed to attach to a container: %v", err)
-		}
-
-		defer hijackedCon.Close()
-
-		written, err := stdcopy.StdCopy(os.Stdout, os.Stderr, hijackedCon.Reader)
-		if err != nil {
-			return fmt.Errorf("Failed to copy IO streams: %v", err)
-		}
-		fmt.Printf("~~~~ read done %d", written)
-	*/
-	// TODO use docker API instead of docker command
-
-	// TODO do not hardcode the shell
 	command := exec.Command("/usr/bin/docker", "exec", "-it", containerName, "zsh")
 
 	command.Stdin = os.Stdin
@@ -240,7 +215,11 @@ func main() {
 		if err != nil {
 			fmt.Printf("Failed to list images: %v\n", err)
 		}
-
+	case "attach <env-name>":
+		err := attachToContainer(client, CLI.Attach.Name)
+		if err != nil {
+			fmt.Printf("Failed to attach to a container: %v\n", err)
+		}
 	case "ps":
 		err := listContainers(client)
 		if err != nil {
