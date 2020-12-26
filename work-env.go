@@ -163,6 +163,10 @@ func listImages(client *client.Client) error {
 }
 
 func printRunningContainers(containers []types.Container) {
+	if len(containers) == 0 {
+		return
+	}
+
 	maxNameLen := 19
 	for _, container := range containers {
 		for _, name := range container.Names {
@@ -188,7 +192,7 @@ func printRunningContainers(containers []types.Container) {
 
 func listContainers(client *client.Client) error {
 	var filter filters.Args = filters.NewArgs()
-	// filter.Add("label", "app=work-env")
+	filter.Add("label", "app=work-env")
 
 	containers, err := client.ContainerList(
 		context.Background(),
