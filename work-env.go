@@ -192,12 +192,12 @@ func main() {
 		} `cmd help:"List running environment images"`
 	}
 
+	ctx := kong.Parse(&CLI)
+
 	client, err := client.NewEnvClient()
 	if err != nil {
 		panic(err)
 	}
-
-	ctx := kong.Parse(&CLI)
 
 	switch ctx.Command() {
 	case "build <path> <image>":
