@@ -54,13 +54,12 @@ func createWorkEnv(client *client.Client, image, name string) (containerId strin
 		AttachStderr: true,
 		Tty:          true,
 		OpenStdin:    true,
-		Env:          envVars(image, name),
-		Cmd:          nil, // TODO             strslice.StrSlice   // Command to run when starting the container
+		Env:          envVars(image, name), Cmd:          nil, // TODO             strslice.StrSlice   // Command to run when starting the container
 		Image:        image,
 		Volumes:      nil,
 		WorkingDir:   workDir,
 		Entrypoint:   nil, //      strslice.StrSlice   // Entrypoint to run when starting the container
-		Labels:       map[string]string{"app": "work-env"},
+		Labels:       map[string]string{"app": WORK_ENV_APP_VAL},
 	}
 
 	var hostConf = container.HostConfig{

@@ -10,10 +10,30 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
-	// for docker attach "github.com/moby/moby/pkg/stdcopy"
 
 	"github.com/alecthomas/kong"
 )
+
+
+const WORK_ENV_APP_VAL = "work-env"
+
+func verifyWorkEnvContainer(client *client.Client, name string) error {
+	json, err := client.ContainerInspect(context.Background(), name)
+
+	if err != nil {
+		return err
+	}
+
+	appVal, ok := json.Config.Labels["app"]
+	if ! ok {
+		return fmt.Errorf("Container '%s' is not a work-env container. Label 'app' not found", name)
+	}
+	if appVal != WORK_ENV_APP_VAL {
+		return fmt.Errorf("Container '%s' is not a work-env container. Label 'app' equals to %s", name, appVal)
+	}
+
+	return nil
+}
 
 func buildEnvironment(client *client.Client, path, image string) error {
 	command := exec.Command("/usr/bin/docker", "build", path, "--tag", image, "--label", "app=work-env")
@@ -31,13 +51,18 @@ func buildEnvironment(client *client.Client, path, image string) error {
 }
 
 func attachToContainer(client *client.Client, containerName string) error {
+	err := verifyWorkEnvContainer(client, containerName)
+	if err != nil {
+		return err
+	}
+
 	command := exec.Command("/usr/bin/docker", "exec", "-it", containerName, "zsh")
 
 	command.Stdin = os.Stdin
 	command.Stdout = os.Stdout
 	command.Stderr = os.Stderr
 
-	err := command.Start()
+	err = command.Start()
 	if err != nil {
 		return fmt.Errorf("Failed to start 'docker exec': %v", err)
 	}
@@ -47,6 +72,11 @@ func attachToContainer(client *client.Client, containerName string) error {
 }
 
 func removeContainer(client *client.Client, containerName string) error {
+	err := verifyWorkEnvContainer(client, containerName)
+	if err != nil {
+		return err
+	}
+
 	return client.ContainerRemove(
 		context.Background(),
 		containerName,
@@ -75,13 +105,16 @@ func printImage(imgSummary *types.ImageSummary) {
 
 }
 
-func listImages(client *client.Client) error {
+func imgAndContainerFilter() filters.Args {
 	var filter filters.Args = filters.NewArgs()
-	filter.Add("label", "app=work-env")
+	filter.Add("label", fmt.Sprintf("app=%s", WORK_ENV_APP_VAL))
+	return filter
+}
 
+func listImages(client *client.Client) error {
 	imgSummaries, err := client.ImageList(
 		context.Background(),
-		types.ImageListOptions{Filters: filter})
+		types.ImageListOptions{Filters: imgAndContainerFilter()})
 	if err != nil {
 		return fmt.Errorf("Failed to list environments: %v", err)
 	}
@@ -125,14 +158,11 @@ func printRunningContainers(containers []types.Container) {
 }
 
 func listContainers(client *client.Client) error {
-	var filter filters.Args = filters.NewArgs()
-	filter.Add("label", "app=work-env")
-
 	containers, err := client.ContainerList(
 		context.Background(),
 		types.ContainerListOptions{
 			All:     true,
-			Filters: filter})
+			Filters: imgAndContainerFilter()})
 	if err != nil {
 		return fmt.Errorf("Failed to list containers: %v", err)
 	}
@@ -149,25 +179,22 @@ func main() {
 			Image string `arg help:"Name of the environment image"`
 			// DockerFile string `arg help:"DockerFile used to create environment" default:"DockerFile"`
 		} `cmd help:"Build new environment image <image-name> from a DockerFile in a current directory"`
-
+		Images struct {
+		} `cmd help:"List environment images"`
 		Create struct {
 			Image string `arg help:"Name of a Docker image used to create environment"`
 			Name  string `arg name:"env-name" help:"Name of the new environment"`
 			Rm    bool   `help:"Remove environment after session finished"`
 		} `cmd help:"Create new environment instance <env-name> from docker image <image> and attach to it. Overwrites existing containers."`
-
+		Ps struct {
+		} `cmd help:"List running environment images"`
 		Attach struct {
 			Name string `arg name:"env-name" help:"Environment name (docker container) to attach"`
 			Rm   bool   `help:"Remove environment after session finished"`
-		} `cmd help:"Start working in environment. Start a container and attach to it."`
-
+		} `cmd help:"Start working in an environment instance. Start a container and attach to it."`
 		Rm struct {
 			Name string `arg name:"env-name" help:"Environment to remove"`
 		} `cmd help:"Remove an environment instance"`
-		Images struct {
-		} `cmd help:"List environment images"`
-		Ps struct {
-		} `cmd help:"List running environment images"`
 	}
 
 	ctx := kong.Parse(&CLI)
@@ -199,11 +226,6 @@ func main() {
 			if err != nil {
 				fmt.Printf("Failed to remove container: %v\n", err)
 			}
-		}
-	case "enter <env-name>":
-		err := attachToContainer(client, CLI.Attach.Name)
-		if err != nil {
-			fmt.Printf("Failed to attach to environment: %v\n", err)
 		}
 	case "rm <env-name>":
 		err := removeContainer(client, CLI.Rm.Name)
