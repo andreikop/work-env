@@ -137,6 +137,28 @@ func removeContainer(client *client.Client, containerName string) error {
 		types.ContainerRemoveOptions{Force: true})
 }
 
+func printImage(imgSummary *types.ImageSummary) {
+	if len(imgSummary.RepoTags) > 0 {
+		for _, repoTag := range imgSummary.RepoTags {
+			if strings.Count(repoTag, ":") == 1 {  // name:version
+				parts := strings.Split(repoTag, ":")
+				name := parts[0]
+				version := parts[1]
+				if version == "latest" {
+					fmt.Printf("%s\n", name)
+				} else {
+					fmt.Printf("%s:%s\n", name, version)
+				}
+			} else {
+				fmt.Printf("%s\n", repoTag)
+			}
+		}
+	} else { // Strange, no tag. Let's show at least ID
+		fmt.Printf("%s\n", imgSummary.ID)
+	}
+
+}
+
 func listImages(client *client.Client) error {
 	var filter filters.Args = filters.NewArgs()
 	filter.Add("label", "app=work-env")
@@ -149,14 +171,7 @@ func listImages(client *client.Client) error {
 	}
 
 	for _, imgSummary := range imgSummaries {
-		if len(imgSummary.RepoTags) > 0 {
-			for _, repoTag := range imgSummary.RepoTags {
-				fmt.Printf("%s\n", repoTag)
-			}
-		} else { // Strange, no tag. Let's show at least ID
-			fmt.Printf("%s\n", imgSummary.ID)
-		}
-
+		printImage(&imgSummary)
 	}
 
 	return nil
