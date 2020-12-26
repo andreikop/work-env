@@ -141,6 +141,9 @@ func printRunningContainers(containers []types.Container) {
 		} else {
 			name = container.ID
 		}
+		if strings.HasPrefix(name, "/") {  // Don't know why docker appends / to names
+			name = name[1:]
+		}
 
 		fmt.Printf(format, name, container.Image)
 	}
