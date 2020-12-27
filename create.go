@@ -54,7 +54,8 @@ func createWorkEnv(client *client.Client, image, name string) (containerId strin
 		AttachStderr: true,
 		Tty:          true,
 		OpenStdin:    true,
-		Env:          envVars(image, name), Cmd:          nil, // TODO             strslice.StrSlice   // Command to run when starting the container
+		Env:          envVars(image, name),
+		Cmd:          nil, // TODO             strslice.StrSlice   // Command to run when starting the container
 		Image:        image,
 		Volumes:      nil,
 		WorkingDir:   workDir,

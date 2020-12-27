@@ -14,7 +14,6 @@ import (
 	"github.com/alecthomas/kong"
 )
 
-
 const WORK_ENV_APP_VAL = "work-env"
 
 func verifyWorkEnvContainer(client *client.Client, name string) error {
@@ -25,7 +24,7 @@ func verifyWorkEnvContainer(client *client.Client, name string) error {
 	}
 
 	appVal, ok := json.Config.Labels["app"]
-	if ! ok {
+	if !ok {
 		return fmt.Errorf("Container '%s' is not a work-env container. Label 'app' not found", name)
 	}
 	if appVal != WORK_ENV_APP_VAL {
@@ -149,7 +148,7 @@ func printRunningContainers(containers []types.Container) {
 		} else {
 			name = container.ID
 		}
-		if strings.HasPrefix(name, "/") {  // Don't know why docker appends / to names
+		if strings.HasPrefix(name, "/") { // Don't know why docker appends / to names
 			name = name[1:]
 		}
 
@@ -211,6 +210,8 @@ func main() {
 			fmt.Printf("Failed to build an environment image: %v\n", err)
 		}
 	case "run <image> <env-name>":
+		// TODO autogenerate env-name
+		// TODO remove running container
 		_, err := createWorkEnv(client, CLI.Run.Image, CLI.Run.Name)
 		if err != nil {
 			fmt.Printf("Failed to create work environment: %v\n", err)
@@ -238,6 +239,7 @@ func main() {
 			fmt.Printf("Failed to list images: %v\n", err)
 		}
 	case "attach <env-name>":
+		// FIXME ensure container is running
 		err := attachToContainer(client, CLI.Attach.Name)
 		if err != nil {
 			fmt.Printf("Failed to attach to a container: %v\n", err)

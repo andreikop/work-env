@@ -9,4 +9,4 @@ if [ -n "$WORK_ENV_NAME" ]; then
     PS1=[${WORK_ENV_NAME}]${PS1}
 fi
 ```
-Now your shell prompt will have environment name at the beginning when you work in an environment.
+Now your shell prompt will have environment name at the beginning when you are working in an environment. Some terminal emulators also show environment hostname on a tab title.
