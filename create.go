@@ -48,7 +48,7 @@ func createWorkEnv(client *client.Client, image, name string) (containerId strin
 
 	var containerConf = container.Config{
 		Hostname:     name,
-		User:         userName(),
+		// User:         userName(),  FIXME uncomment, find a good way to configure user
 		AttachStdin:  true,
 		AttachStdout: true,
 		AttachStderr: true,

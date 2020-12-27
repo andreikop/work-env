@@ -55,7 +55,7 @@ func attachToContainer(client *client.Client, containerName string) error {
 		return err
 	}
 
-	command := exec.Command("/usr/bin/docker", "exec", "-it", containerName, "zsh")
+	command := exec.Command("/usr/bin/docker", "exec", "-it", containerName, "zsh")  // FIXME zsh hardcoded
 
 	command.Stdin = os.Stdin
 	command.Stdout = os.Stdout
