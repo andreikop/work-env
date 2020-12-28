@@ -16,22 +16,23 @@ import (
 
 const WORK_ENV_APP_VAL = "work-env"
 
-func verifyWorkEnvContainer(client *client.Client, name string) error {
+// Get container by name. Verify if it is a work-env container
+func getWorkEnvContainer(client *client.Client, name string) (*types.ContainerJSON, error) {
 	json, err := client.ContainerInspect(context.Background(), name)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	appVal, ok := json.Config.Labels["app"]
 	if !ok {
-		return fmt.Errorf("Container '%s' is not a work-env container. Label 'app' not found", name)
+		return nil, fmt.Errorf("Container '%s' is not a work-env container. Label 'app' not found", name)
 	}
 	if appVal != WORK_ENV_APP_VAL {
-		return fmt.Errorf("Container '%s' is not a work-env container. Label 'app' equals to %s", name, appVal)
+		return nil, fmt.Errorf("Container '%s' is not a work-env container. Label 'app' equals to %s", name, appVal)
 	}
 
-	return nil
+	return &json, nil
 }
 
 func buildEnvironment(client *client.Client, path, image string) error {
@@ -50,7 +51,7 @@ func buildEnvironment(client *client.Client, path, image string) error {
 }
 
 func attachToContainer(client *client.Client, containerName string) error {
-	err := verifyWorkEnvContainer(client, containerName)
+	_, err := getWorkEnvContainer(client, containerName)
 	if err != nil {
 		return err
 	}
@@ -70,8 +71,23 @@ func attachToContainer(client *client.Client, containerName string) error {
 	return nil
 }
 
+func attachToContainerCommand(client *client.Client, containerName string) error {
+	contJson, err := getWorkEnvContainer(client, containerName)
+	if err != nil {
+		return err
+	}
+	if !contJson.State.Running {
+		err = client.ContainerStart(context.Background(), containerName, types.ContainerStartOptions{})
+		if err != nil {
+			return fmt.Errorf("Failed to start container: %s", err)
+		}
+	}
+
+	return attachToContainer(client, containerName)
+}
+
 func removeContainer(client *client.Client, containerName string) error {
-	err := verifyWorkEnvContainer(client, containerName)
+	_, err := getWorkEnvContainer(client, containerName)
 	if err != nil {
 		return err
 	}
@@ -194,6 +210,7 @@ func main() {
 		Rm struct {
 			Name string `arg name:"env-name" help:"Environment to remove"`
 		} `cmd help:"Remove an environment instance"`
+		// TODO rmi command
 	}
 
 	ctx := kong.Parse(&CLI)
@@ -202,6 +219,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	// TODO check if docker daemon is alive
 
 	switch ctx.Command() {
 	case "build <path> <image>":
@@ -239,8 +257,7 @@ func main() {
 			fmt.Printf("Failed to list images: %v\n", err)
 		}
 	case "attach <env-name>":
-		// FIXME ensure container is running
-		err := attachToContainer(client, CLI.Attach.Name)
+		err := attachToContainerCommand(client, CLI.Attach.Name)
 		if err != nil {
 			fmt.Printf("Failed to attach to a container: %v\n", err)
 		}
