@@ -142,7 +142,6 @@ func listImagesCommand(client *client.Client) error {
 }
 
 func runEnvironmentCommand(client *client.Client, image, name string, rm bool) error {
-	// TODO autogenerate env-name
 	// TODO remove running container
 	_, err := createWorkEnv(client, image, name)
 	if err != nil {

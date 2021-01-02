@@ -35,8 +35,8 @@ func (i *ImagesCmd) Run(ctx *Context) error {
 }
 
 type RunCmd struct {
-	Image string `arg help:"Name of a Docker image used to create an environment"`
-	Name  string `arg name:"env-name" help:"Name of the new environment"`
+	Image string `arg default:"work-env" help:"Name of a Docker image used to create an environment"`
+	Name  string `arg name:"env-name" default:"work-env" help:"Name of the new environment"`
 	Rm    bool   `help:"Remove an environment after a session finished"`
 }
 
@@ -53,7 +53,7 @@ func (p *PsCmd) Run(ctx *Context) error {
 }
 
 type AttachCmd struct {
-	Name string `arg name:"env-name" help:"Environment name (docker container) to attach"`
+	Name string `arg name:"env-name" default:"work-env" help:"Environment name (docker container) to attach"`
 	Rm   bool   `help:"Remove environment after session finished"`
 }
 
