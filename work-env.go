@@ -141,9 +141,22 @@ func listImagesCommand(client *client.Client) error {
 	return nil
 }
 
-func runEnvironmentCommand(client *client.Client, image, name string, rm bool) error {
-	// TODO remove running container
-	_, err := createWorkEnv(client, image, name)
+func runEnvironmentCommand(client *client.Client, image, name string, overwrite, rmAfter bool) error {
+	_, err := getWorkEnvContainer(client, name)
+	alreadyExists := err == nil
+
+	if alreadyExists {
+		if overwrite {
+			err := removeContainerCommand(client, name)
+			if err != nil {
+				return err
+			}
+		} else {
+			return fmt.Errorf("Container '%s' is already running. Add --overwire to overwire it", name)
+		}
+	}
+
+	_, err = createWorkEnv(client, image, name)
 	if err != nil {
 		return fmt.Errorf("Failed to create work environment: %v", err)
 	}
@@ -151,7 +164,7 @@ func runEnvironmentCommand(client *client.Client, image, name string, rm bool) e
 	if err != nil {
 		return fmt.Errorf("Failed to enter to environment: %v", err)
 	}
-	if rm {
+	if rmAfter {
 		err = removeContainerCommand(client, name)
 		if err != nil {
 			return fmt.Errorf("Failed to remove container: %v", err)

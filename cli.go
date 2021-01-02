@@ -35,14 +35,15 @@ func (i *ImagesCmd) Run(ctx *Context) error {
 }
 
 type RunCmd struct {
-	Image string `arg default:"work-env" help:"Name of a Docker image used to create an environment"`
-	Name  string `arg name:"env-name" default:"work-env" help:"Name of the new environment"`
-	Rm    bool   `help:"Remove an environment after a session finished"`
+	Image     string `arg default:"work-env" help:"Name of a Docker image used to create an environment"`
+	Name      string `arg name:"env-name" default:"work-env" help:"Name of the new environment"`
+	Overwrite bool   `short:"y" help:"Overwrite existing container if exists"`
+	Rm        bool   `help:"Remove an environment after a session finished"`
 }
 
 func (r *RunCmd) Run(ctx *Context) error {
 	return formatError("run environment",
-		runEnvironmentCommand(ctx.client, r.Image, r.Name, r.Rm))
+		runEnvironmentCommand(ctx.client, r.Image, r.Name, r.Overwrite, r.Rm))
 }
 
 type PsCmd struct{}
