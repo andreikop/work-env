@@ -19,7 +19,6 @@ const WORK_ENV_APP_VAL = "work-env"
 // Get container by name. Verify if it is a work-env container
 func getWorkEnvContainer(client *client.Client, name string) (*types.ContainerJSON, error) {
 	json, err := client.ContainerInspect(context.Background(), name)
-
 	if err != nil {
 		return nil, err
 	}
@@ -33,6 +32,23 @@ func getWorkEnvContainer(client *client.Client, name string) (*types.ContainerJS
 	}
 
 	return &json, nil
+}
+
+func checkWorkEnvImageExists(client *client.Client, name string) error {
+	imInspect, _, err := client.ImageInspectWithRaw(context.Background(), name)
+	if err != nil {
+		return err
+	}
+
+	appVal, ok := imInspect.Config.Labels["app"]
+	if !ok {
+		return fmt.Errorf("Image '%s' is not a work-env image. Label 'app' not found", name)
+	}
+	if appVal != WORK_ENV_APP_VAL {
+		return fmt.Errorf("Image '%s' is not a work-env container. Label 'app' equals to %s", name, appVal)
+	}
+
+	return nil
 }
 
 func buildEnvironmentCommand(client *client.Client, path, image string) error {
@@ -96,6 +112,20 @@ func removeContainerCommand(client *client.Client, containerName string) error {
 		context.Background(),
 		containerName,
 		types.ContainerRemoveOptions{Force: true})
+}
+
+func removeImageCommand(client *client.Client, imageName string) error {
+	err := checkWorkEnvImageExists(client, imageName)
+	if err != nil {
+		return err
+	}
+
+	_, err = client.ImageRemove(
+		context.Background(),
+		imageName,
+		types.ImageRemoveOptions{Force: true, PruneChildren: true})
+
+	return err
 }
 
 func printImage(imgSummary *types.ImageSummary) {
@@ -224,16 +254,6 @@ type Context struct {
 }
 
 func main() {
-	var CLI struct {
-		Build  BuildCmd  `cmd help:"Build new environment image <image-name> from a DockerFile in a current directory"`
-		Images ImagesCmd `cmd help:"List environment images"`
-		Run    RunCmd    `cmd help:"Create a new environment instance <env-name> from docker image <image> and attach to it. Overwrites existing containers."`
-		Ps     PsCmd     `cmd help:"List running environment images"`
-		Attach AttachCmd `cmd help:"Start working in an environment instance. Start a container and attach to it."`
-		Rm     RmCmd     `cmd help:"Remove an environment instance"`
-		// TODO rmi command
-	}
-
 	ctx := kong.Parse(&CLI)
 
 	client, err := client.NewEnvClient()

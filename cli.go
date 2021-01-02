@@ -105,3 +105,26 @@ type RmCmd struct {
 func (r *RmCmd) Run(ctx *Context) error {
 	return formatError("remove container", removeContainerCommand(ctx.client, r.Name))
 }
+
+type RmImageCmd struct {
+	Image string `arg name:"image-name" help:"Docker image name to remove. Only images built by work-env can be removed."`
+}
+
+func (r *RmImageCmd) Run(ctx *Context) error {
+	err := validateImageName(r.Image)
+	if err != nil {
+		return err
+	}
+	return formatError("remove image", removeImageCommand(ctx.client, r.Image))
+}
+
+var CLI struct {
+	Build  BuildCmd   `cmd help:"Build new environment image <image-name> from a DockerFile in a current directory"`
+	Images ImagesCmd  `cmd help:"List environment images"`
+	Run    RunCmd     `cmd help:"Create a new environment instance <env-name> from docker image <image> and attach to it. Overwrites existing containers."`
+	Ps     PsCmd      `cmd help:"List running environment images"`
+	Attach AttachCmd  `cmd help:"Start working in an environment instance. Start a container and attach to it."`
+	Rm     RmCmd      `cmd help:"Remove an environment instance"`
+	Rmi    RmImageCmd `cmd help:"Remove a docker image built by work-env"`
+	// TODO rmi command
+}
