@@ -47,7 +47,7 @@ func createWorkEnv(client *client.Client, image, name string) (containerId strin
 	workDir, _ := os.Getwd()
 
 	var containerConf = container.Config{
-		Hostname:     name,
+		Hostname: name,
 		// User:         userName(),  FIXME uncomment, find a good way to configure user
 		AttachStdin:  true,
 		AttachStdout: true,

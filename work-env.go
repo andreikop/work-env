@@ -35,7 +35,7 @@ func getWorkEnvContainer(client *client.Client, name string) (*types.ContainerJS
 	return &json, nil
 }
 
-func buildEnvironment(client *client.Client, path, image string) error {
+func buildEnvironmentCommand(client *client.Client, path, image string) error {
 	command := exec.Command("/usr/bin/docker", "build", path, "--tag", image, "--label", "app=work-env")
 
 	command.Stdin = os.Stdin
@@ -56,7 +56,7 @@ func attachToContainer(client *client.Client, containerName string) error {
 		return err
 	}
 
-	command := exec.Command("/usr/bin/docker", "exec", "-it", containerName, "zsh")  // FIXME zsh hardcoded
+	command := exec.Command("/usr/bin/docker", "exec", "-it", containerName, "zsh") // FIXME zsh hardcoded
 
 	command.Stdin = os.Stdin
 	command.Stdout = os.Stdout
@@ -86,7 +86,7 @@ func attachToContainerCommand(client *client.Client, containerName string) error
 	return attachToContainer(client, containerName)
 }
 
-func removeContainer(client *client.Client, containerName string) error {
+func removeContainerCommand(client *client.Client, containerName string) error {
 	_, err := getWorkEnvContainer(client, containerName)
 	if err != nil {
 		return err
@@ -126,7 +126,7 @@ func imgAndContainerFilter() filters.Args {
 	return filter
 }
 
-func listImages(client *client.Client) error {
+func listImagesCommand(client *client.Client) error {
 	imgSummaries, err := client.ImageList(
 		context.Background(),
 		types.ImageListOptions{Filters: imgAndContainerFilter()})
@@ -141,6 +141,26 @@ func listImages(client *client.Client) error {
 	return nil
 }
 
+func runEnvironmentCommand(client *client.Client, image, name string, rm bool) error {
+	// TODO autogenerate env-name
+	// TODO remove running container
+	_, err := createWorkEnv(client, image, name)
+	if err != nil {
+		return fmt.Errorf("Failed to create work environment: %v", err)
+	}
+	err = attachToContainer(client, name)
+	if err != nil {
+		return fmt.Errorf("Failed to enter to environment: %v", err)
+	}
+	if rm {
+		err = removeContainerCommand(client, name)
+		if err != nil {
+			return fmt.Errorf("Failed to remove container: %v", err)
+		}
+	}
+
+	return nil
+}
 func printRunningContainers(containers []types.Container) {
 	if len(containers) == 0 {
 		return
@@ -172,7 +192,7 @@ func printRunningContainers(containers []types.Container) {
 	}
 }
 
-func listContainers(client *client.Client) error {
+func listContainersCommand(client *client.Client) error {
 	containers, err := client.ContainerList(
 		context.Background(),
 		types.ContainerListOptions{
@@ -187,29 +207,18 @@ func listContainers(client *client.Client) error {
 	return nil
 }
 
+type Context struct {
+	client *client.Client
+}
+
 func main() {
 	var CLI struct {
-		Build struct {
-			Path  string `arg help:"Docker image build path"`
-			Image string `arg help:"Name of the environment image"`
-			// DockerFile string `arg help:"DockerFile used to create environment" default:"DockerFile"`
-		} `cmd help:"Build new environment image <image-name> from a DockerFile in a current directory"`
-		Images struct {
-		} `cmd help:"List environment images"`
-		Run struct {
-			Image string `arg help:"Name of a Docker image used to create an environment"`
-			Name  string `arg name:"env-name" help:"Name of the new environment"`
-			Rm    bool   `help:"Remove an environment after a session finished"`
-		} `cmd help:"Create a new environment instance <env-name> from docker image <image> and attach to it. Overwrites existing containers."`
-		Ps struct {
-		} `cmd help:"List running environment images"`
-		Attach struct {
-			Name string `arg name:"env-name" help:"Environment name (docker container) to attach"`
-			Rm   bool   `help:"Remove environment after session finished"`
-		} `cmd help:"Start working in an environment instance. Start a container and attach to it."`
-		Rm struct {
-			Name string `arg name:"env-name" help:"Environment to remove"`
-		} `cmd help:"Remove an environment instance"`
+		Build  BuildCmd  `cmd help:"Build new environment image <image-name> from a DockerFile in a current directory"`
+		Images ImagesCmd `cmd help:"List environment images"`
+		Run    RunCmd    `cmd help:"Create a new environment instance <env-name> from docker image <image> and attach to it. Overwrites existing containers."`
+		Ps     PsCmd     `cmd help:"List running environment images"`
+		Attach AttachCmd `cmd help:"Start working in an environment instance. Start a container and attach to it."`
+		Rm     RmCmd     `cmd help:"Remove an environment instance"`
 		// TODO rmi command
 	}
 
@@ -219,55 +228,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
 	// TODO check if docker daemon is alive
-
-	switch ctx.Command() {
-	case "build <path> <image>":
-		err := buildEnvironment(client, CLI.Build.Path, CLI.Build.Image)
-		if err != nil {
-			fmt.Printf("Failed to build an environment image: %v\n", err)
-		}
-	case "run <image> <env-name>":
-		// TODO autogenerate env-name
-		// TODO remove running container
-		_, err := createWorkEnv(client, CLI.Run.Image, CLI.Run.Name)
-		if err != nil {
-			fmt.Printf("Failed to create work environment: %v\n", err)
-			return
-		}
-		err = attachToContainer(client, CLI.Run.Name)
-		if err != nil {
-			fmt.Printf("Failed to enter to environment: %v\n", err)
-			return
-		}
-		if CLI.Run.Rm {
-			err = removeContainer(client, CLI.Run.Name)
-			if err != nil {
-				fmt.Printf("Failed to remove container: %v\n", err)
-			}
-		}
-	case "rm <env-name>":
-		err := removeContainer(client, CLI.Rm.Name)
-		if err != nil {
-			fmt.Printf("Failed to remove container: %v\n", err)
-		}
-	case "images":
-		err := listImages(client)
-		if err != nil {
-			fmt.Printf("Failed to list images: %v\n", err)
-		}
-	case "attach <env-name>":
-		err := attachToContainerCommand(client, CLI.Attach.Name)
-		if err != nil {
-			fmt.Printf("Failed to attach to a container: %v\n", err)
-		}
-	case "ps":
-		err := listContainers(client)
-		if err != nil {
-			fmt.Printf("Failed to list environment instances: %v\n", err)
-		}
-	default:
-		panic(ctx.Command())
+	err = ctx.Run(&Context{client: client})
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
 	}
-
 }
