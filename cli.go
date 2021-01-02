@@ -26,6 +26,8 @@ func (b *BuildCmd) Run(ctx *Context) error {
 		buildEnvironmentCommand(ctx.client, b.Path, b.Image))
 }
 
+// TODO validate image and container names
+// https://github.com/docker/distribution/blob/master/reference/regexp.go
 type ImagesCmd struct {
 }
 
