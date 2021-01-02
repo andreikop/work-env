@@ -241,7 +241,14 @@ func main() {
 		panic(err)
 	}
 
-	// TODO check if docker daemon is alive
+	_, err = client.Ping(context.Background())
+	if err != nil {
+		fmt.Fprintf(os.Stderr,
+			"Failed to connect to Docker daemon. Error: '%v'.\nIs Docker daemon running and does current user have sufficient access permissions?\n",
+			err)
+		return
+	}
+
 	err = ctx.Run(&Context{client: client})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
