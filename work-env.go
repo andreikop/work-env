@@ -135,6 +135,10 @@ func printImage(imgSummary *types.ImageSummary) {
 				parts := strings.Split(repoTag, ":")
 				name := parts[0]
 				version := parts[1]
+				if name == "<none>"{  // strange names :-/
+					continue
+				}
+
 				if version == "latest" {
 					fmt.Printf("%s\n", name)
 				} else {
