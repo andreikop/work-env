@@ -4,6 +4,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/docker/distribution/reference"
+	"github.com/docker/docker/daemon/names"
 )
 
 func formatError(command string, err error) error {
@@ -14,6 +16,20 @@ func formatError(command string, err error) error {
 	}
 }
 
+func validateImageName(name string) error {
+	if !reference.ReferenceRegexp.MatchString(name) {
+		return fmt.Errorf("Incorrect docker image name '%s'", name)
+	}
+	return nil
+}
+
+func validateContainerName(name string) error {
+	if !names.RestrictedNamePattern.MatchString(name) {
+		return fmt.Errorf("Incorrect docker container name '%s'", name)
+	}
+	return nil
+}
+
 type BuildCmd struct {
 	Path  string `arg help:"Docker image build path"`
 	Image string `arg help:"Name of the environment image"`
@@ -21,13 +37,16 @@ type BuildCmd struct {
 }
 
 func (b *BuildCmd) Run(ctx *Context) error {
+	err := validateImageName(b.Image)
+	if err != nil {
+		return err
+	}
+
 	return formatError(
 		"build",
 		buildEnvironmentCommand(ctx.client, b.Path, b.Image))
 }
 
-// TODO validate image and container names
-// https://github.com/docker/distribution/blob/master/reference/regexp.go
 type ImagesCmd struct {
 }
 
@@ -44,6 +63,15 @@ type RunCmd struct {
 }
 
 func (r *RunCmd) Run(ctx *Context) error {
+	err := validateImageName(r.Image)
+	if err != nil {
+		return err
+	}
+	err = validateContainerName(r.Name)
+	if err != nil {
+		return err
+	}
+
 	return formatError("run environment",
 		runEnvironmentCommand(ctx.client, r.Image, r.Name, r.Overwrite, r.Rm))
 }
@@ -61,6 +89,11 @@ type AttachCmd struct {
 }
 
 func (a *AttachCmd) Run(ctx *Context) error {
+	err := validateContainerName(a.Name)
+	if err != nil {
+		return err
+	}
+
 	return formatError("attach to a container",
 		attachToContainerCommand(ctx.client, a.Name))
 }

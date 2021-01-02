@@ -72,6 +72,7 @@ func createWorkEnv(client *client.Client, image, name string) (containerId strin
 		&containerConf,
 		&hostConf,
 		nil, // networkingConfig
+		// nil, // platformConfig
 		name)
 	if err != nil {
 		return "", fmt.Errorf("Failed to start container: %v", err)
