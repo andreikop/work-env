@@ -72,7 +72,9 @@ func attachToContainer(client *client.Client, containerName string) error {
 		return err
 	}
 
-	command := exec.Command("/usr/bin/docker", "exec", "-it", containerName, "zsh") // FIXME zsh hardcoded
+	// command := exec.Command("/usr/bin/docker", "exec", "-it", containerName, "zsh") // FIXME zsh hardcoded
+
+	command := exec.Command("/usr/bin/docker", "attach", containerName) // FIXME works only one time
 
 	command.Stdin = os.Stdin
 	command.Stdout = os.Stdout
@@ -135,7 +137,7 @@ func printImage(imgSummary *types.ImageSummary) {
 				parts := strings.Split(repoTag, ":")
 				name := parts[0]
 				version := parts[1]
-				if name == "<none>"{  // strange names :-/
+				if name == "<none>" { // strange names :-/
 					continue
 				}
 

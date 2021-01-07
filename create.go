@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"os/user"
 
@@ -24,22 +25,19 @@ func mounts() []mount.Mount {
 	}
 }
 
-func userName() string {
+func envVars(image, name string) []string {
 	user, err := user.Current()
-	userName := ""
-	if err == nil {
-		userName = user.Username
-	} else {
-		fmt.Printf("Failed to get current user: %v", err)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	return userName
-}
-
-func envVars(image, name string) []string {
 	return []string{
 		fmt.Sprintf("WORK_ENV_IMAGE=%s", image),
 		fmt.Sprintf("WORK_ENV_NAME=%s", name),
+		fmt.Sprintf("WORK_ENV_USER_SHELL=%s", os.Getenv("SHELL")),
+		fmt.Sprintf("WORK_ENV_USER_ID=%s", user.Uid),
+		fmt.Sprintf("WORK_ENV_USER_NAME=%s", user.Username),
+		fmt.Sprintf("WORK_ENV_USER_PASSWORD=%s", user.Username),
 	}
 }
 
@@ -47,8 +45,7 @@ func createWorkEnv(client *client.Client, image, name string) (containerId strin
 	workDir, _ := os.Getwd()
 
 	var containerConf = container.Config{
-		Hostname: name,
-		// User:         userName(),  FIXME uncomment, find a good way to configure user
+		Hostname:     name,
 		AttachStdin:  true,
 		AttachStdout: true,
 		AttachStderr: true,
