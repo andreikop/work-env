@@ -260,7 +260,12 @@ type Context struct {
 }
 
 func main() {
-	ctx := kong.Parse(&CLI)
+	kongObj := kong.Must(&CLI,
+		kong.Name("work-env"),
+		kong.Description("Virtual command line working environment for developers. http://github.com/andreikop/work-env"))
+
+	ctx, err := kongObj.Parse(os.Args[1:])
+	kongObj.FatalIfErrorf(err)
 
 	client, err := client.NewEnvClient()
 	if err != nil {
