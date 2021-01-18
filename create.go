@@ -62,6 +62,7 @@ func createWorkEnv(client *client.Client, image, name string) (containerId strin
 
 	var hostConf = container.HostConfig{
 		Mounts: mounts(),
+		NetworkMode: "host",
 	}
 
 	resp, err := client.ContainerCreate(
