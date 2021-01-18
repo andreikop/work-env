@@ -104,30 +104,47 @@ func attachToContainerCommand(client *client.Client, containerName string) error
 	return attachToContainer(client, containerName)
 }
 
-func removeContainerCommand(client *client.Client, containerName string) error {
-	_, err := getWorkEnvContainer(client, containerName)
-	if err != nil {
-		return err
+func removeContainerCommand(client *client.Client, containerNames []string) error {
+	for _, containerName := range containerNames {
+		_, err := getWorkEnvContainer(client, containerName)
+		if err != nil {
+			return err
+		}
 	}
 
-	return client.ContainerRemove(
-		context.Background(),
-		containerName,
-		types.ContainerRemoveOptions{Force: true})
+	for _, containerName := range containerNames {
+		err := client.ContainerRemove(
+			context.Background(),
+			containerName,
+			types.ContainerRemoveOptions{Force: true})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
-func removeImageCommand(client *client.Client, imageName string) error {
-	err := checkWorkEnvImageExists(client, imageName)
-	if err != nil {
-		return err
+func removeImageCommand(client *client.Client, imageNames []string) error {
+	for _, imageName := range imageNames {
+		err := checkWorkEnvImageExists(client, imageName)
+		if err != nil {
+			return err
+		}
 	}
 
-	_, err = client.ImageRemove(
-		context.Background(),
-		imageName,
-		types.ImageRemoveOptions{Force: true, PruneChildren: true})
+	for _, imageName := range imageNames {
+		_, err := client.ImageRemove(
+			context.Background(),
+			imageName,
+			types.ImageRemoveOptions{Force: true, PruneChildren: true})
 
-	return err
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func printImage(imgSummary *types.ImageSummary) {
@@ -183,7 +200,7 @@ func runEnvironmentCommand(client *client.Client, image, name string, overwrite,
 
 	if alreadyExists {
 		if overwrite {
-			err := removeContainerCommand(client, name)
+			err := removeContainerCommand(client, []string{name})
 			if err != nil {
 				return err
 			}
@@ -201,7 +218,7 @@ func runEnvironmentCommand(client *client.Client, image, name string, overwrite,
 		return fmt.Errorf("Failed to enter to environment: %v", err)
 	}
 	if rmAfter {
-		err = removeContainerCommand(client, name)
+		err = removeContainerCommand(client, []string{name})
 		if err != nil {
 			return fmt.Errorf("Failed to remove container: %v", err)
 		}

@@ -99,23 +99,33 @@ func (a *AttachCmd) Run(ctx *Context) error {
 }
 
 type RmCmd struct {
-	Name string `arg name:"env-name" help:"Environment to remove"`
+	Names []string `arg name:"env-name" help:"Environment to remove"`
 }
 
 func (r *RmCmd) Run(ctx *Context) error {
-	return formatError("remove container", removeContainerCommand(ctx.client, r.Name))
+	for _, name := range r.Names {
+		err := validateContainerName(name)
+		if err != nil {
+			return err
+		}
+	}
+
+	return formatError("remove container", removeContainerCommand(ctx.client, r.Names))
 }
 
 type RmImageCmd struct {
-	Image string `arg name:"image-name" help:"Docker image name to remove. Only images built by work-env can be removed."`
+	Images []string `arg name:"image-name" help:"Docker image name to remove. Only images built by work-env can be removed."`
 }
 
 func (r *RmImageCmd) Run(ctx *Context) error {
-	err := validateImageName(r.Image)
-	if err != nil {
-		return err
+	for _, imageName := range r.Images {
+		err := validateImageName(imageName)
+		if err != nil {
+			return err
+		}
 	}
-	return formatError("remove image", removeImageCommand(ctx.client, r.Image))
+
+	return formatError("remove image", removeImageCommand(ctx.client, r.Images))
 }
 
 var CLI struct {
