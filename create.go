@@ -38,6 +38,7 @@ func envVars(image, name string) []string {
 		fmt.Sprintf("WORK_ENV_USER_ID=%s", user.Uid),
 		fmt.Sprintf("WORK_ENV_USER_NAME=%s", user.Username),
 		fmt.Sprintf("WORK_ENV_USER_PASSWORD=%s", user.Username),
+		fmt.Sprintf("DISPLAY=%s", os.Getenv("DISPLAY")),
 	}
 }
 
