@@ -83,19 +83,18 @@ func (p *PsCmd) Run(ctx *Context) error {
 		listContainersCommand(ctx.client))
 }
 
-type AttachCmd struct {
+type EnterCmd struct {
 	Name string `arg name:"env-name" default:"work-env" help:"Environment name (docker container) to attach"`
-	Rm   bool   `help:"Remove environment after session finished"`
 }
 
-func (a *AttachCmd) Run(ctx *Context) error {
-	err := validateContainerName(a.Name)
+func (e *EnterCmd) Run(ctx *Context) error {
+	err := validateContainerName(e.Name)
 	if err != nil {
 		return err
 	}
 
-	return formatError("attach to a container",
-		attachToContainerCommand(ctx.client, a.Name))
+	return formatError("Enter container",
+		enterContainerCommand(ctx.client, e.Name))
 }
 
 type RmCmd struct {
@@ -133,8 +132,7 @@ var CLI struct {
 	Images ImagesCmd  `cmd help:"List environment images"`
 	Run    RunCmd     `cmd help:"Create a new environment instance <env-name> from docker image <image> and attach to it. Overwrites existing containers."`
 	Ps     PsCmd      `cmd help:"List running environment images"`
-	Attach AttachCmd  `cmd help:"Start working in an environment instance. Start a container and attach to it."`
+	Enter  EnterCmd   `cmd help:"Start working in an environment instance. Start a container if not running and attach to it."`
 	Rm     RmCmd      `cmd help:"Remove an environment instance"`
 	Rmi    RmImageCmd `cmd help:"Remove a docker image built by work-env"`
-	// TODO rmi command
 }

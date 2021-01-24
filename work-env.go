@@ -66,15 +66,16 @@ func buildEnvironmentCommand(client *client.Client, path, image string) error {
 	return nil
 }
 
-func attachToContainer(client *client.Client, containerName string) error {
-	_, err := getWorkEnvContainer(client, containerName)
+func enterContainer(client *client.Client, containerName string) error {
+	confJson, err := getWorkEnvContainer(client, containerName)
 	if err != nil {
 		return err
 	}
 
-	// command := exec.Command("/usr/bin/docker", "exec", "-it", containerName, "zsh") // FIXME zsh hardcoded
-
-	command := exec.Command("/usr/bin/docker", "attach", containerName) // FIXME works only one time
+	args := []string{"exec", "-it", containerName, confJson.Path}
+	args = append(args, confJson.Args...)
+	// Run container entrypoint once more
+	command := exec.Command("/usr/bin/docker", args...)
 
 	command.Stdin = os.Stdin
 	command.Stdout = os.Stdout
@@ -89,7 +90,7 @@ func attachToContainer(client *client.Client, containerName string) error {
 	return nil
 }
 
-func attachToContainerCommand(client *client.Client, containerName string) error {
+func enterContainerCommand(client *client.Client, containerName string) error {
 	contJson, err := getWorkEnvContainer(client, containerName)
 	if err != nil {
 		return err
@@ -101,7 +102,7 @@ func attachToContainerCommand(client *client.Client, containerName string) error
 		}
 	}
 
-	return attachToContainer(client, containerName)
+	return enterContainer(client, containerName)
 }
 
 func removeContainerCommand(client *client.Client, containerNames []string) error {
@@ -190,6 +191,27 @@ func listImagesCommand(client *client.Client) error {
 	for _, imgSummary := range imgSummaries {
 		printImage(&imgSummary)
 	}
+
+	return nil
+}
+
+func attachToContainer(client *client.Client, containerName string) error {
+	_, err := getWorkEnvContainer(client, containerName)
+	if err != nil {
+		return err
+	}
+
+	command := exec.Command("/usr/bin/docker", "attach", containerName) // FIXME works only one time
+
+	command.Stdin = os.Stdin
+	command.Stdout = os.Stdout
+	command.Stderr = os.Stderr
+
+	err = command.Start()
+	if err != nil {
+		return fmt.Errorf("Failed to start 'docker exec': %v", err)
+	}
+	defer command.Wait()
 
 	return nil
 }
