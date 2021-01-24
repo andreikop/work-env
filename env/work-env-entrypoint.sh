@@ -15,12 +15,15 @@ check_if_set WORK_ENV_USER_NAME
 check_if_set WORK_ENV_USER_PASSWORD
 check_if_set WORK_ENV_USER_ID
 
-useradd \
-    --shell ${WORK_ENV_USER_SHELL} \
-    --groups sudo \
-    --uid ${WORK_ENV_USER_ID}  \
-    --password "$(openssl passwd -1 ${WORK_ENV_USER_PASSWORD})" \
-    ${WORK_ENV_USER_NAME}
+
+if ! id "$WORK_ENV_USER_NAME" &>/dev/null; then
+    useradd \
+        --shell ${WORK_ENV_USER_SHELL} \
+        --groups sudo \
+        --uid ${WORK_ENV_USER_ID}  \
+        --password "$(openssl passwd -1 ${WORK_ENV_USER_PASSWORD})" \
+        ${WORK_ENV_USER_NAME}
+fi
 
 user_name=$WORK_ENV_USER_NAME
 
