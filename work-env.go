@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"strings"
@@ -72,9 +73,21 @@ func enterContainer(client *client.Client, containerName string) error {
 		return err
 	}
 
-	args := []string{"exec", "-it", containerName, confJson.Path}
+	workDir, err := os.Getwd()
+	if err != nil {
+		log.Fatalf("Failed to get working directory: %s", err)
+	}
+
+	// Run container entrypoint in the container once more
+	args := []string{
+		"exec",
+		"--interactive",
+		"--tty",
+		"--workdir", workDir,
+		containerName,
+		confJson.Path,
+	}
 	args = append(args, confJson.Args...)
-	// Run container entrypoint once more
 	command := exec.Command("/usr/bin/docker", args...)
 
 	command.Stdin = os.Stdin

@@ -62,7 +62,7 @@ func createWorkEnv(client *client.Client, image, name string) (containerId strin
 	}
 
 	var hostConf = container.HostConfig{
-		Mounts: mounts(),
+		Mounts:      mounts(),
 		NetworkMode: "host",
 	}
 

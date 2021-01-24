@@ -84,7 +84,7 @@ func (p *PsCmd) Run(ctx *Context) error {
 }
 
 type EnterCmd struct {
-	Name string `arg name:"env-name" default:"work-env" help:"Environment name (docker container) to attach"`
+	Name string `arg name:"env-name" default:"work-env" help:"Environment name (docker container) to attach. Default name is 'work-env'"`
 }
 
 func (e *EnterCmd) Run(ctx *Context) error {
