@@ -130,7 +130,7 @@ func (r *RmImageCmd) Run(ctx *Context) error {
 var CLI struct {
 	Build  BuildCmd   `cmd help:"Build new environment image <image-name> from a DockerFile in a current directory"`
 	Images ImagesCmd  `cmd help:"List environment images"`
-	Run    RunCmd     `cmd help:"Create a new environment instance <env-name> from docker image <image> and attach to it. Overwrites existing containers."`
+	Run    RunCmd     `cmd help:"Create a new environment instance <env-name> from docker image <image> and attach to it."`
 	Ps     PsCmd      `cmd help:"List running environment images"`
 	Enter  EnterCmd   `cmd help:"Start working in an environment instance. Start a container if not running and attach to it."`
 	Rm     RmCmd      `cmd help:"Remove an environment instance"`
