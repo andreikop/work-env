@@ -56,8 +56,8 @@ func (i *ImagesCmd) Run(ctx *Context) error {
 }
 
 type RunCmd struct {
-	Image     string `arg default:"work-env" help:"Name of a Docker image used to create an environment"`
 	Name      string `arg name:"env-name" default:"work-env" help:"Name of the new environment"`
+	Image     string `arg default:"work-env" help:"Name of a Docker image used to create an environment"`
 	Overwrite bool   `short:"y" help:"Overwrite existing container if exists"`
 	Rm        bool   `help:"Remove an environment after a session finished"`
 }

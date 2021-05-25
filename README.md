@@ -63,7 +63,7 @@ Using `work-env` as base image. This is a default Ubuntu-based image prepared by
 
 First run:
 ```bash
-> work-env run work-env my-project
+> work-env run my-project
 Welcome to work-env. Your sudo password is 'ak'
 # Your work-env is ready. Now you can work here
 > apt update
