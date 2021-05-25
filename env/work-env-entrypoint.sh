@@ -27,6 +27,8 @@ fi
 
 user_name=$WORK_ENV_USER_NAME
 
+echo "Welcome to work-env. Your sudo password is '${WORK_ENV_USER_NAME}'"
+
 # Do not pass this variables to users shell
 unset WORK_ENV_USER_SHELL
 unset WORK_ENV_USER_NAME

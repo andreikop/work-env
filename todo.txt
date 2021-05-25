@@ -1,3 +1,4 @@
 Own shell history
 Password equals to users password?
 Attach: make sure in directory from which started
+Automatically pull images
