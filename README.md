@@ -117,3 +117,7 @@ if [ -n "$WORK_ENV_NAME" ]; then
 fi
 ```
 Now your shell prompt will have environment name at the beginning when you are working in an environment. Some terminal emulators also show environment hostname on a tab title.
+
+## work-env hacking
+### Build packages
+See [package-build-env/Dockerfile](package-build-env/Dockerfile)
