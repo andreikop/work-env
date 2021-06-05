@@ -36,21 +36,6 @@ func validateContainerName(name string) error {
 
 /*
 
-type BuildCmd struct {
-	Path  string `arg help:"Docker image build path"`
-	Image string `arg help:"Name of the environment image"`
-	// DockerFile string `arg help:"DockerFile used to create environment" default:"DockerFile"`
-}
-
-
-type ImagesCmd struct {
-}
-
-func (i *ImagesCmd) Run(ctx *Context) error {
-	return formatError("list images",
-		listImagesCommand(ctx.client))
-}
-
 type RunCmd struct {
 	Name      string `arg name:"env-name" default:"work-env" help:"Name of the new environment"`
 	Image     string `arg default:"work-env" help:"Name of a Docker image used to create an environment"`
@@ -124,8 +109,6 @@ func (r *RmImageCmd) Run(ctx *Context) error {
 }
 
 var CLI struct {
-	Build  BuildCmd   `cmd help:"Build new environment image <image-name> from a DockerFile in a current directory"`
-	Images ImagesCmd  `cmd help:"List environment images"`
 	Run    RunCmd     `cmd help:"Create a new environment instance <env-name> from docker image <image> and attach to it."`
 	Ps     PsCmd      `cmd help:"List running environment images"`
 	Enter  EnterCmd   `cmd help:"Start working in an environment instance. Start a container if not running and attach to it."`
@@ -135,13 +118,10 @@ var CLI struct {
 
 */
 
-func executeCommandLine(client *client.Client) {
-	var rootCmd = &cobra.Command{
-		Use:   "work-env",
-		Short: "Virtual command line working environment for developers. http://github.com/andreikop/work-env",
-	}
+var (
+    globalClient *client.Client = nil
 
-	var cmdBuild = &cobra.Command{
+    cmdBuild = &cobra.Command{
 		Use:   "build [path] [image-name]",
 		Short: "Build from a DockerFile in a directory <path> a new environment image <image-name>",
 		Args: func(cmd *cobra.Command, args []string) error {
@@ -165,10 +145,29 @@ func executeCommandLine(client *client.Client) {
 
 			return formatError(
 				"build",
-				buildEnvironmentCommand(client, path, image))
+				buildEnvironmentCommand(globalClient, path, image))
 		},
 	}
 
+	cmdImages = &cobra.Command{
+		Use: "images",
+		Short: "List environment images",
+		Args: cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return formatError("list images",
+				listImagesCommand(globalClient))
+		},
+	}
+)
+
+func executeCommandLine(client *client.Client) {
+	globalClient = client
+	var rootCmd = &cobra.Command{
+		Use:   "work-env",
+		Short: "Virtual command line working environment for developers. http://github.com/andreikop/work-env",
+	}
+
 	rootCmd.AddCommand(cmdBuild)
+	rootCmd.AddCommand(cmdImages)
 	rootCmd.Execute()
 }
