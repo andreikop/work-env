@@ -36,27 +36,6 @@ func validateContainerName(name string) error {
 
 /*
 
-type RunCmd struct {
-	Name      string `arg name:"env-name" default:"work-env" help:"Name of the new environment"`
-	Image     string `arg default:"work-env" help:"Name of a Docker image used to create an environment"`
-	Overwrite bool   `short:"y" help:"Overwrite existing container if exists"`
-	Rm        bool   `help:"Remove an environment after a session finished"`
-}
-
-func (r *RunCmd) Run(ctx *Context) error {
-	err := validateImageName(r.Image)
-	if err != nil {
-		return err
-	}
-	err = validateContainerName(r.Name)
-	if err != nil {
-		return err
-	}
-
-	return formatError("run environment",
-		runEnvironmentCommand(ctx.client, r.Image, r.Name, r.Overwrite, r.Rm))
-}
-
 type PsCmd struct{}
 
 func (p *PsCmd) Run(ctx *Context) error {
@@ -158,6 +137,40 @@ var (
 				listImagesCommand(globalClient))
 		},
 	}
+
+	cmdRun = &cobra.Command{
+		Use: "run [env-name=work-env] [image=work-env]",
+		Short: "Create a new environment instance <env-name> from docker image <image> and attach to it.",
+		Args: cobra.RangeArgs(0, 2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var image = "work-env"
+			if len(args) > 0 {
+				image = args[0]
+			}
+
+			var name = "work-env"
+			if len(args) > 1 {
+				name = args[1]
+			}
+
+			err := validateImageName(image)
+			if err != nil {
+				return err
+			}
+			err = validateContainerName(name)
+			if err != nil {
+				return err
+			}
+
+			return formatError("run environment",
+				runEnvironmentCommand(
+					globalClient,
+					image, name,
+					cmd.LocalFlags().Lookup("overwrite").Value.String() == "true",
+					cmd.LocalFlags().Lookup("remove").Value.String() == "true"))
+		},
+	}
+
 )
 
 func executeCommandLine(client *client.Client) {
@@ -169,5 +182,11 @@ func executeCommandLine(client *client.Client) {
 
 	rootCmd.AddCommand(cmdBuild)
 	rootCmd.AddCommand(cmdImages)
+
+	// FIXME remove this flag, invent better behavior
+	cmdRun.Flags().BoolP("overwrite", "y", true, "Overwrite existing container if exists")
+	cmdRun.Flags().BoolP("remove", "r", false, "Remove an environment after a session finished")
+	rootCmd.AddCommand(cmdRun)
+
 	rootCmd.Execute()
 }
