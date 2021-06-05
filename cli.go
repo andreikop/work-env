@@ -36,20 +36,6 @@ func validateContainerName(name string) error {
 
 /*
 
-type EnterCmd struct {
-	Name string `arg name:"env-name" default:"work-env" help:"Environment name (docker container) to attach. Default name is 'work-env'"`
-}
-
-func (e *EnterCmd) Run(ctx *Context) error {
-	err := validateContainerName(e.Name)
-	if err != nil {
-		return err
-	}
-
-	return formatError("Enter container",
-		enterContainerCommand(ctx.client, e.Name))
-}
-
 type RmCmd struct {
 	Names []string `arg name:"env-name" help:"Environment to remove"`
 }
@@ -137,20 +123,19 @@ var (
 			var image = "work-env"
 			if len(args) > 0 {
 				image = args[0]
+				err := validateImageName(image)
+				if err != nil {
+					return err
+				}
 			}
 
 			var name = "work-env"
 			if len(args) > 1 {
 				name = args[1]
-			}
-
-			err := validateImageName(image)
-			if err != nil {
-				return err
-			}
-			err = validateContainerName(name)
-			if err != nil {
-				return err
+				err := validateContainerName(name)
+				if err != nil {
+					return err
+				}
 			}
 
 			return formatError("run environment",
@@ -173,7 +158,26 @@ var (
 		},
 	}
 
+	cmdEnter = &cobra.Command{
+		Use: "enter [env-name=work-env]",
+		Short: "Start working in an environment instance. Start a container <env-name> if not running and attach to it.",
+		Args: cobra.RangeArgs(0, 1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var envName = "work-env"
+			if len(args) > 0 {
+				envName = args[0]
+				err := validateContainerName(envName)
+				if err != nil {
+					return err
+				}
+			}
+
+			return formatError("Enter container",
+				enterContainerCommand(globalClient, envName))
+		},
+	}
 )
+
 
 func executeCommandLine(client *client.Client) {
 	globalClient = client
@@ -191,6 +195,7 @@ func executeCommandLine(client *client.Client) {
 	rootCmd.AddCommand(cmdRun)
 
 	rootCmd.AddCommand(cmdPs)
+	rootCmd.AddCommand(cmdEnter)
 
 	rootCmd.Execute()
 }
