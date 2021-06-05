@@ -34,46 +34,6 @@ func validateContainerName(name string) error {
 	return nil
 }
 
-/*
-
-type RmCmd struct {
-	Names []string `arg name:"env-name" help:"Environment to remove"`
-}
-
-func (r *RmCmd) Run(ctx *Context) error {
-	for _, name := range r.Names {
-		err := validateContainerName(name)
-		if err != nil {
-			return err
-		}
-	}
-
-	return formatError("remove container", removeContainerCommand(ctx.client, r.Names))
-}
-
-type RmImageCmd struct {
-	Images []string `arg name:"image-name" help:"Docker image name to remove. Only images built by work-env can be removed."`
-}
-
-func (r *RmImageCmd) Run(ctx *Context) error {
-	for _, imageName := range r.Images {
-		err := validateImageName(imageName)
-		if err != nil {
-			return err
-		}
-	}
-
-	return formatError("remove image", removeImageCommand(ctx.client, r.Images))
-}
-
-var CLI struct {
-	Enter  EnterCmd   `cmd help:"Start working in an environment instance. Start a container if not running and attach to it."`
-	Rm     RmCmd      `cmd help:"Remove an environment instance"`
-	Rmi    RmImageCmd `cmd help:"Remove a docker image built by work-env"`
-}
-
-*/
-
 var (
     globalClient *client.Client = nil
 
@@ -176,6 +136,42 @@ var (
 				enterContainerCommand(globalClient, envName))
 		},
 	}
+
+	// FIXME document 1+ args
+	cmdRm = &cobra.Command{
+		Use: "rm env-name",
+		Short: "Remove an environment instance <env-name>",
+		Args: cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			for _, arg := range(args) {
+				err := validateContainerName(arg)
+				if err != nil {
+					return err
+				}
+			}
+
+			return formatError("Remove container",
+				removeContainerCommand(globalClient, args))
+		},
+	}
+
+	// FIXME document 1+ args
+	cmdRmi = &cobra.Command{
+		Use: "rmi image-name",
+		Short: "Remove a docker image <image-env> built by work-env",
+		Args: cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			for _, arg := range(args) {
+				err := validateImageName(arg)
+				if err != nil {
+					return err
+				}
+			}
+
+			return formatError("Remove image",
+				removeImageCommand(globalClient, args))
+		},
+	}
 )
 
 
@@ -196,6 +192,8 @@ func executeCommandLine(client *client.Client) {
 
 	rootCmd.AddCommand(cmdPs)
 	rootCmd.AddCommand(cmdEnter)
+	rootCmd.AddCommand(cmdRm)
+	rootCmd.AddCommand(cmdRmi)
 
 	rootCmd.Execute()
 }
