@@ -36,13 +36,6 @@ func validateContainerName(name string) error {
 
 /*
 
-type PsCmd struct{}
-
-func (p *PsCmd) Run(ctx *Context) error {
-	return formatError("list environment instances",
-		listContainersCommand(ctx.client))
-}
-
 type EnterCmd struct {
 	Name string `arg name:"env-name" default:"work-env" help:"Environment name (docker container) to attach. Default name is 'work-env'"`
 }
@@ -88,8 +81,6 @@ func (r *RmImageCmd) Run(ctx *Context) error {
 }
 
 var CLI struct {
-	Run    RunCmd     `cmd help:"Create a new environment instance <env-name> from docker image <image> and attach to it."`
-	Ps     PsCmd      `cmd help:"List running environment images"`
 	Enter  EnterCmd   `cmd help:"Start working in an environment instance. Start a container if not running and attach to it."`
 	Rm     RmCmd      `cmd help:"Remove an environment instance"`
 	Rmi    RmImageCmd `cmd help:"Remove a docker image built by work-env"`
@@ -171,6 +162,17 @@ var (
 		},
 	}
 
+	cmdPs = &cobra.Command{
+		Use: "ps",
+		Short: "List environment instances",
+		Args: cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return formatError(
+				"list environment instances",
+				listContainersCommand(globalClient))
+		},
+	}
+
 )
 
 func executeCommandLine(client *client.Client) {
@@ -187,6 +189,8 @@ func executeCommandLine(client *client.Client) {
 	cmdRun.Flags().BoolP("overwrite", "y", true, "Overwrite existing container if exists")
 	cmdRun.Flags().BoolP("remove", "r", false, "Remove an environment after a session finished")
 	rootCmd.AddCommand(cmdRun)
+
+	rootCmd.AddCommand(cmdPs)
 
 	rootCmd.Execute()
 }
