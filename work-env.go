@@ -11,8 +11,6 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
-
-	"github.com/alecthomas/kong"
 )
 
 const WORK_ENV_APP_VAL = "work-env"
@@ -312,13 +310,6 @@ type Context struct {
 }
 
 func main() {
-	kongObj := kong.Must(&CLI,
-		kong.Name("work-env"),
-		kong.Description("Virtual command line working environment for developers. http://github.com/andreikop/work-env"))
-
-	ctx, err := kongObj.Parse(os.Args[1:])
-	kongObj.FatalIfErrorf(err)
-
 	client, err := client.NewEnvClient()
 	if err != nil {
 		panic(err)
@@ -332,8 +323,5 @@ func main() {
 		return
 	}
 
-	err = ctx.Run(&Context{client: client})
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-	}
+	executeCommandLine(client)
 }

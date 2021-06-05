@@ -3,9 +3,13 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/daemon/names"
+
+	"github.com/docker/docker/client"
+	"github.com/spf13/cobra"
 )
 
 func formatError(command string, err error) error {
@@ -30,22 +34,14 @@ func validateContainerName(name string) error {
 	return nil
 }
 
+/*
+
 type BuildCmd struct {
 	Path  string `arg help:"Docker image build path"`
 	Image string `arg help:"Name of the environment image"`
 	// DockerFile string `arg help:"DockerFile used to create environment" default:"DockerFile"`
 }
 
-func (b *BuildCmd) Run(ctx *Context) error {
-	err := validateImageName(b.Image)
-	if err != nil {
-		return err
-	}
-
-	return formatError(
-		"build",
-		buildEnvironmentCommand(ctx.client, b.Path, b.Image))
-}
 
 type ImagesCmd struct {
 }
@@ -135,4 +131,44 @@ var CLI struct {
 	Enter  EnterCmd   `cmd help:"Start working in an environment instance. Start a container if not running and attach to it."`
 	Rm     RmCmd      `cmd help:"Remove an environment instance"`
 	Rmi    RmImageCmd `cmd help:"Remove a docker image built by work-env"`
+}
+
+*/
+
+func executeCommandLine(client *client.Client) {
+	var rootCmd = &cobra.Command{
+		Use:   "work-env",
+		Short: "Virtual command line working environment for developers. http://github.com/andreikop/work-env",
+	}
+
+	var cmdBuild = &cobra.Command{
+		Use:   "build [path] [image-name]",
+		Short: "Build from a DockerFile in a directory <path> a new environment image <image-name>",
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) != 2 {
+				return errors.New("requires 2 arguments")
+			}
+			err := validateImageName(args[1])
+			if err != nil {
+				return err
+			}
+			return nil
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var path = args[0]
+			var image = args[1]
+
+			err := validateImageName(image)
+			if err != nil {
+				return err
+			}
+
+			return formatError(
+				"build",
+				buildEnvironmentCommand(client, path, image))
+		},
+	}
+
+	rootCmd.AddCommand(cmdBuild)
+	rootCmd.Execute()
 }
